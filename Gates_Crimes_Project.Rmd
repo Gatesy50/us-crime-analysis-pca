@@ -1,0 +1,231 @@
+---
+title: "Analyzing U.S. Crime Patterns Using Principal Component Analysis"
+author: "Nathan Gates"
+date: "`r Sys.Date()`"
+output: 
+  word_document:
+    number_sections: true
+---
+
+```{r setup, echo=F, message=F,include=FALSE}
+library(tidyverse)
+library(psych)
+library(factoextra)
+library(knitr)
+crimes<-read.csv("crimes.csv")
+crimes
+row.names(crimes)<-crimes$State
+crimes
+pca<-crimes %>% select(-State,-Region) %>% prcomp(scale=T)
+summary(pca)
+round(pca$sdev^2,3)
+sum(pca$sdev^2)
+round(pca$r,3)
+
+describe(crimes %>% select(-State, -Region))
+cor(crimes %>% select(-State, -Region))
+describeBy(crimes %>% select(-State, -Region), group = crimes$Region)
+```
+
+# Executive Summary
+
+The results of the study suggest that principal component analysis successfully reduced the dimensions of crime data across U.S. states. Two principal components explained most of the variation, allowing crime rates to be compared more easily across states and regions. Patterns of crime types and regional differences were identified through this analysis.
+
+# Introduction
+
+The purpose of this study is to analyze state-level crime data from the United States for the year 2019. Seven different types of crimes were considered across all 50 states. Principal Component Analysis (PCA) was used to reduce the dimensionality of the data and uncover patterns across states and regions. Descriptive statistics and correlation analyses were also performed to summarize crime rates by state and by Census region.
+
+## Variables
+
+Crime rates for seven different offenses were used in the study. The variables include rates per 100,000 people for each crime type. Each variable represents the number of reported offenses standardized by population.
+
+```{r variables-table, message=FALSE, warning=FALSE, echo=FALSE}
+library(knitr)
+library(flextable)
+
+variables <- data.frame(
+  Variable = c("Burglary", "Larceny", "Car Theft", "Assault", "Murder", "Rape", "Robbery"),
+  Description = c(
+    "Unlawful entry into a building to commit a crime.",
+    "Theft of personal property without breaking and entering.",
+    "Theft or attempted theft of a motor vehicle.",
+    "Physical attack on another person.",
+    "Unlawful killing of another person.",
+    "Sexual assault against another person.",
+    "Taking property from a person by force or threat."
+  )
+)
+
+flextable(variables) %>% 
+  set_caption(caption = "Table 2.1: Variables used in the study") %>% 
+  autofit()
+```
+
+# Methodology
+
+Statistical analyses were conducted using RStudio. Descriptive statistics were used to summarize crime rates across states and regions. Principal Component Analysis (PCA) was then performed to reduce the number of variables and identify major patterns in the data.
+
+## Numerical Summaries
+
+To begin, we computed summary statistics (mean and standard deviation) for each of the seven crime variables to understand the overall level and variability of crime across states. We also calculated these values by region to compare geographic differences. In addition, we examined the correlation matrix of the variables to explore how different crimes relate to one another. For instance, high correlations between burglary, larceny, and car theft would suggest these crimes tend to occur together.
+
+## Principal Component Analysis
+
+Principal Component Analysis (PCA) is a statistical technique used to reduce the number of correlated variables in a dataset while retaining as much information as possible. It does this by creating new uncorrelated variables, called principal components, which are linear combinations of the original variables. The general form of a principal component is:
+
+$$\text{PC}_1 = a_{11}X_1 + a_{12}X_2 + a_{13}X_3 + \dots + a_{1p}X_p$$
+
+where $X_1, X_2, \dots, X_p$ are the original standardized crime variables and $a_{1j}$ are the loadings (coefficients) for each variable. Each principal component is constructed to maximize the amount of variance it explains while being uncorrelated with the other components. The loadings determine how much each original variable contributes to the principal component, and the scores represent the new coordinates of each observation in the reduced space.
+
+# 4 Results
+
+## Descriptive Statistics Results
+
+To understand the overall levels of crime across the country, we calculated the mean and standard deviation for each crime variable. Table 6.1 presents these values. Larceny had the highest national average, indicating it is the most common crime among the seven considered. In contrast, murder had the lowest average, which aligns with expectations. The standard deviations show large variability, especially for property crimes like burglary and larceny, suggesting that crime levels vary widely across states.
+
+We next explored how these crimes relate to each other using a correlation matrix, which is displayed in Table 6.2. The matrix reveals strong positive correlations between property crimes such as burglary, larceny, and car theft, meaning that states with high rates of one of these crimes tend to also have high rates of the others. Violent crimes like assault and murder also show moderate positive correlations. Interestingly, rape stands out as the least correlated crime, indicating it behaves differently across the dataset.
+
+Regional differences were also examined. Table 6.3 displays the mean and Table 6.4 display the standard deviation of each crime grouped by region. It is evident that the South and West regions tend to have higher average crime rates, particularly for burglary and larceny, while the Northeast consistently reports the lowest crime rates. The Midwest falls somewhere in the middle. These regional differences highlight how geography may play a role in crime trends.
+
+<br><br>
+
+## Principal Component Analysis Results
+
+To simplify the complexity of analyzing seven correlated variables, we applied Principal Component Analysis (PCA) to reduce the dimensionality. Figure 6.1 shows the scree plot of the eigenvalues. The sharp drop between the first and second components, followed by a leveling off, suggests that the first two principal components capture most of the variation in the data — specifically, 59.5% by PC1 and an additional 15.1% by PC2, totaling 74.6%. This suggests that plotting the data in two dimensions provides an effective summary of overall crime patterns.
+
+We then examined how each crime contributes to the principal components. Table 6.5 presents the loadings, or weights, of each crime on the first two components. Most crimes load strongly and positively on PC1, indicating that this component represents overall crime severity. A state with a high score on PC1 is likely to have elevated levels of several crimes. PC2, on the other hand, separates crimes based on the nature of violent acts. Crimes like murder and robbery, which typically involve public confrontation and visible violence, have strong positive loadings, while rape, which often involves private, less visible acts of violence, has a strong negative loading. Therefore, PC2 can be interpreted as distinguishing between public confrontational violence and private personal violence. This separation highlights different patterns of violent crime among states.
+
+The first two principal components are formed as follows:
+
+$$
+\begin{aligned}
+\text{PC1} &= 0.425 \times \text{Burglary} + 0.423 \times \text{Larceny} + 0.403 \times \text{Car Theft} + 0.417 \times \text{Assault} \\
+&\quad + 0.382 \times \text{Murder} + 0.242 \times \text{Rape} + 0.317 \times \text{Robbery} \\
+\\
+\text{PC2} &= 0.041 \times \text{Burglary} - 0.014 \times \text{Larceny} - 0.178 \times \text{Car Theft} - 0.130 \times \text{Assault} \\
+&\quad + 0.380 \times \text{Murder} - 0.757 \times \text{Rape} + 0.482 \times \text{Robbery}
+\end{aligned}
+$$
+
+The PCA biplot in Figure 6.2 shows how the 50 U.S. states are projected into the PCA space and colored by region. States in the Northeast cluster closely together, indicating relatively similar and lower crime rates. States in the South and West are more dispersed, suggesting greater variability and generally higher crime rates across different types.
+
+The PCA variable plot in Figure 6.3 displays how each crime relates to one another in PCA space. This circular plot helps us see how crimes relate to each other. Crimes whose vectors are close to 0 degrees apart, such as burglary, larceny, and assault, are highly correlated and contribute similarly to PC1. In contrast, crimes whose vectors are close to 90 degrees, such as rape and robbery have no correlations with each other.
+
+In summary, principal component analysis reduced the dimensionality of the crime data into two key components that capture most of the variation. The results highlight that property crimes tend to move together, while crimes like rape vary independently, and that regional differences play a role in crime rate patterns across the United States.
+
+# Conclusion
+
+The principal component analysis was successful in reducing the complexity of crime rate data across U.S. states. It is our belief that this technique provides an effective way to summarize patterns among multiple crime types and detect regional differences. We strongly suggest that similar methods be applied to future crime datasets to better understand evolving crime trends across the country.
+
+# Appendix
+
+Below are all of the graphs and tables used to conduct the statistical analysis.
+
+<br><br>
+
+```{r national-descriptive-table, echo=FALSE, warning=FALSE, message=FALSE}
+library(flextable)
+library(tibble)
+
+
+crime_stats <- tibble(
+  Crime = c("Burglary", "Larceny", "Car Theft", "Assault", "Murder", "Rape", "Robbery"),
+  Mean = c(347.30, 1536.46, 212.93, 250.50, 4.78, 47.63, 62.58),
+  `Standard Deviation` = c(142.39, 367.03, 96.96, 120.14, 2.64, 19.84, 32.33)
+)
+
+flextable(crime_stats) %>% 
+  set_caption(caption = "Table 6.1: Mean and Standard Deviation of Crime Rates in the U.S.") %>% 
+  autofit()
+```
+
+<br><br>
+
+```{r crime-correlation-table, echo=FALSE, warning=FALSE, message=FALSE}
+library(flextable)
+library(tibble)
+
+crime_correlation <- tibble(
+  Crime = c("Burglary", "Larceny", "Car Theft", "Assault", "Murder", "Rape", "Robbery"),
+  Burglary = c(1.000, 0.738, 0.702, 0.679, 0.705, 0.302, 0.388),
+  Larceny = c(0.738, 1.000, 0.778, 0.614, 0.588, 0.342, 0.462),
+  `Car Theft` = c(0.702, 0.778, 1.000, 0.571, 0.388, 0.442, 0.483),
+  Assault = c(0.679, 0.614, 0.571, 1.000, 0.660, 0.546, 0.494),
+  Murder = c(0.705, 0.588, 0.388, 0.660, 1.000, 0.168, 0.588),
+  Rape = c(0.302, 0.342, 0.442, 0.546, 0.168, 1.000, 0.072),
+  Robbery = c(0.388, 0.462, 0.483, 0.494, 0.588, 0.072, 1.000)
+)
+
+flextable(crime_correlation) %>%
+  set_caption(caption = "Table 6.2: Correlation Matrix of Crime Variables") %>%
+  autofit()
+```
+
+<br><br>
+
+```{r region-means-table, echo=FALSE, warning=FALSE, message=FALSE}
+region_means <- tibble(
+  Crime = c("Burglary", "Larceny", "Car Theft", "Assault", "Murder", "Rape", "Robbery"),
+  Midwest = c(315.65, 1436.00, 205.22, 239.68, 4.13, 51.34, 54.42),
+  Northeast = c(177.01, 1078.81, 92.28, 145.64, 2.69, 34.59, 47.54),
+  South = c(436.26, 1725.52, 219.71, 291.17, 6.98, 41.40, 72.30),
+  West = c(384.91, 1713.32, 295.23, 283.04, 4.11, 60.91, 68.57)
+)
+
+flextable(region_means) %>%
+  fontsize(size = 11, part = "all") %>%
+  width(j = 1:5, width = 1.2) %>%  # widen each column
+  set_caption("Table 6.3: Mean Crime Rates by Region")
+```
+
+<br><br>
+
+```{r region-sd-table, echo=FALSE, warning=FALSE, message=FALSE}
+region_sd <- tibble(
+  Crime = c("Burglary", "Larceny", "Car Theft", "Assault", "Murder", "Rape", "Robbery"),
+  Midwest = c(60.36, 231.08, 59.40, 68.46, 2.28, 12.76, 24.73),
+  Northeast = c(28.35, 92.00, 39.39, 62.67, 1.06, 10.05, 28.12),
+  South = c(147.61, 313.24, 59.40, 101.88, 2.28, 13.15, 29.29),
+  West = c(129.78, 352.30, 106.46, 165.33, 2.38, 28.10, 41.31)
+)
+
+flextable(region_sd) %>%
+  fontsize(size = 11, part = "all") %>%
+  width(j = 1:5, width = 1.2) %>%
+  set_caption("Table 6.4: Standard Deviations of Crime Rates by Region")
+```
+
+<br><br>
+
+```{r screeplot-figure, fig.cap="Figure 6.1: Scree plot showing the proportion of variance explained by each principal component.", fig.height=5, fig.width=6, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center'}
+fviz_screeplot(pca, addlabels = TRUE)
+```
+
+<br><br>
+
+```{r pca-loadings-table, echo=FALSE, warning=FALSE, message=FALSE}
+library(flextable)
+library(tibble)
+
+pc_loadings <- tibble(
+  Crime = c("Burglary", "Larceny", "Car Theft", "Assault", "Murder", "Rape", "Robbery"),
+  `PC1` = c(0.425, 0.423, 0.403, 0.417, 0.382, 0.242, 0.317),
+  `PC2` = c(0.041, -0.014, -0.178, -0.130, 0.380, -0.757, 0.482)
+)
+
+flextable(pc_loadings) %>% 
+  set_caption(caption = "Table 6.5: Principal Component Loadings for PC1 and PC2") %>% 
+  autofit()
+```
+
+<br><br>
+
+```{r biplot-figure, fig.cap="Figure 6.2: PCA biplot showing the states colored by region.", fig.height=6, fig.width=7, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center'}
+fviz_pca_biplot(pca, habillage = crimes$Region, repel = TRUE)
+```
+
+<br><br>
+
+```{r variable-plot-figure, fig.cap="Figure 6.3: PCA variable plot showing relationships among crimes.", fig.height=6, fig.width=6, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center'}
+fviz_pca_var(pca, repel = TRUE)
+```
